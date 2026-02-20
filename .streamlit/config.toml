@@ -1,0 +1,14 @@
+[client]
+showErrorDetails = true
+
+[browser]
+serverAddress = "localhost"
+
+[server]
+port = 8501
+headless = true
+enableCORS = false
+
+[telemetry]
+enabled = false
+optedOutCollectionDisabled = true

@@ -53,7 +53,10 @@ class SensorManager:
             existing = sensor_repo.get_by_name(internal_name)
             if existing:
                 logger.warning(f"Sensor {internal_name} já existe")
-                return existing
+                # Extract sensor ID before closing session
+                sensor_id = existing.sensor_id
+                # Merge to detached session for continued use
+                return session.merge(existing)
 
             # Create new sensor
             sensor = sensor_repo.create(
@@ -68,6 +71,10 @@ class SensorManager:
                 upper_warning_limit=upper_warning_limit,
                 upper_critical_limit=upper_critical_limit
             )
+
+            # Flush to get sensor_id generated
+            session.flush()
+            sensor_id = sensor.sensor_id
 
             session.commit()
             logger.info(f"✓ Sensor criado: {internal_name}")

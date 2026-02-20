@@ -3,13 +3,9 @@ Database connection and session management for SQLite backend.
 Handles database initialization, connection pooling, and session lifecycle.
 """
 import os
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
 from src.data.models import Base
-from src.utils.config import get_config
-
-logger = None
 
 
 class DatabaseManager:
@@ -116,7 +112,7 @@ class DatabaseManager:
         """
         try:
             with self.engine.connect() as conn:
-                conn.execute("SELECT 1")
+                conn.execute(text("SELECT 1"))
             return True
         except Exception as e:
             print(f"Database health check failed: {e}")

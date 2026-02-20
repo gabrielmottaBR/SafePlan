@@ -8,6 +8,7 @@ prophet>=1.1.4
 requests>=2.31.0
 apscheduler>=3.11.0
 plotly>=5.14.0
-openpyxl>=3.10.0
+openpyxl>=3.0.0
 reportlab>=4.0.0
 python-dotenv>=1.0.0
+pytz
