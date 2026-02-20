@@ -36,6 +36,40 @@ SafePlan é um dashboard interativo profissional para monitoramento em tempo qua
 5. **Unit Tests**
    - `tests/unit/test_data_layer.py`: Testes básicos
 
+---
+
+## 🚀 Fase 2 - Core Alerting (Completa ✅)
+
+### Implementado
+
+1. **Alert Engine** (`src/alerting/alert_engine.py`)
+   - State machine: ACTIVE → ACKNOWLEDGED → RESOLVED
+   - Threshold-based alerting
+   - 4 níveis de severidade (OK, Warning, Danger, Critical)
+   - Deduplicação automática de alertas
+
+2. **Teams Integration** (`src/alerting/teams_notifier.py`)
+   - Adaptive Card formatting
+   - Retry logic com exponential backoff
+   - Webhook connectivity testing
+   - Notification logging
+
+3. **Sensor Manager** (`src/sensors/sensor_manager.py`)
+   - CRUD para sensores
+   - Alert rule creation/management
+   - Multi-platform support (P74-P79, FPAB, FPAT)
+   - 9+ tipos de sensores
+
+4. **Streamlit Dashboard** (`app/main.py`)
+   - Multi-page application (6 páginas)
+   - Dashboard: real-time metrics
+   - Alerts: gerenciamento de alertas
+   - Configuration: sensor setup
+   - DevTools: debugging
+
+5. **Integration Tests**
+   - `scripts/test_phase2.py`: Testes end-to-end
+
 ## 🔧 Como Usar
 
 ### 1. Setup Inicial
@@ -65,15 +99,30 @@ cp .env.example .env
 python scripts/init_db.py
 ```
 
-### 4. Execute Testes
+### 4. Execute Testes (Fase 1)
 
 ```bash
 python -m pytest tests/unit/test_data_layer.py -v
 ```
 
+### 5. Execute Testes de Integração (Fase 2)
+
+```bash
+python scripts/test_phase2.py
+```
+
+### 6. Inicie o Dashboard
+
+```bash
+streamlit run app/main.py
+```
+
+Acesse: http://localhost:8501
+
+---
+
 ## 📅 Próximas Fases
 
-- **Fase 2:** Core Alerting (Alert Engine, Dashboard básico)
 - **Fase 3:** ML Integration (Anomaly Detection, Forecasting)
 - **Fase 4:** Advanced UI & Reporting
 - **Fase 5:** Scheduling & Automation
@@ -81,11 +130,12 @@ python -m pytest tests/unit/test_data_layer.py -v
 
 ## 📚 Documentação
 
-- Architecture: `docs/ARCHITECTURE.md`
-- Database Schema: `docs/DATABASE_SCHEMA.md`
-- Plano Detalhado: Ver arquivo de plano (`~/.claude/plans/`)
+- **Fase 1 Guide:** `docs/ARCHITECTURE.md`
+- **Fase 2 Guide:** `docs/PHASE2_GUIDE.md`
+- **Database Schema:** `docs/DATABASE_SCHEMA.md`
+- **Plano Detalhado:** Ver arquivo de plano
 
 ---
 
-**Status:** Fase 1 (Foundation) ✅
-**Próximo:** Fase 2 (Core Alerting)
+**Status:** Fase 2 (Core Alerting) ✅
+**Próximo:** Fase 3 (ML Integration)
