@@ -70,6 +70,68 @@ SafePlan é um dashboard interativo profissional para monitoramento em tempo qua
 5. **Integration Tests**
    - `scripts/test_phase2.py`: Testes end-to-end
 
+---
+
+## 🌐 Fase 2B - PI AF Server Integration (Completa ✅)
+
+### Implementado
+
+Integração completa com PI AF Server (SAURIOPIAF02) para leitura automatizada de sensores de fogo e gás do servidor Petrobras.
+
+1. **Configuração AF Server**
+   - `config/config_gideaopi.json`: Configuração para SAURIOPIAF02 e DB_BUZIOS_SENSORES
+
+2. **Biblioteca gideaoPI Adaptada**
+   - `src/pi_server/gideaoPI.py`: Adaptação da biblioteca Petrobras com logging e integração ConfiguraçãoI
+
+3. **AF Database Manager**
+   - `src/pi_server/af_manager.py`: Exploração e descoberta automatizada de sensores na hierarquia AF
+   - Suporte para 8+ tipos de sensores: CH4, H2S, CO2, FLAME, SMOKE, TEMPERATURE, H2, O2
+   - Organização por plataforma (P74-P79, FPAB, FPAT)
+
+4. **Scripts de Integração**
+   - `scripts/discover_sensor_paths.py`: Descobre sensores e gera mapeamento em JSON
+   - `scripts/import_sensors_from_af.py`: Importa sensores com thresholds automáticos
+
+5. **Documentação**
+   - `docs/PI_AF_INTEGRATION.md`: Guia completo com instruções e troubleshooting
+
+### Fluxo de Integração
+
+```
+[1] Conectar a SAURIOPIAF02 → DB_BUZIOS_SENSORES
+    └─ python scripts/discover_sensor_paths.py
+    └─ Gera config/sensor_paths_buzios.json com mapeamento
+
+[2] Importar sensores para SafePlan
+    └─ python scripts/import_sensors_from_af.py
+    └─ Aplica thresholds automáticos por tipo
+    └─ Cria regras de alerta (Warning + Critical)
+
+[3] Verificar no Dashboard
+    └─ streamlit run app/main.py
+    └─ Configuration → List Sensors
+```
+
+### Thresholds Automáticos
+
+Sensores importados com limites inteligentes baseados no tipo:
+
+- **CH4:** 0 → 5 (warning) → 50 (danger) → 100 (critical) ppm
+- **H2S:** 0 → 1 → 10 → 20 ppm
+- **CO2:** 0 → 100 → 5000 → 10000 ppm
+- **TEMPERATURE:** -10°C → 20 → 60 → 80°C
+- **FLAME/SMOKE:** Escalas específicas (0-3)
+- Outros: Configuáveis via UI
+
+### Pré-requisitos
+
+1. PI AF SDK instalado em `C:\Program Files (x86)\PIPC\AF\PublicAssemblies\4.0`
+2. Acesso à rede corporativa (SAURIOPIAF02 acessível)
+3. Python 3.8+ com suporte a .NET assemblies (pythonnet/IronPython)
+
+---
+
 ## 🔧 Como Usar
 
 ### 1. Setup Inicial
@@ -132,10 +194,11 @@ Acesse: http://localhost:8501
 
 - **Fase 1 Guide:** `docs/ARCHITECTURE.md`
 - **Fase 2 Guide:** `docs/PHASE2_GUIDE.md`
+- **Fase 2B Guide:** `docs/PI_AF_INTEGRATION.md`
 - **Database Schema:** `docs/DATABASE_SCHEMA.md`
 - **Plano Detalhado:** Ver arquivo de plano
 
 ---
 
-**Status:** Fase 2 (Core Alerting) ✅
+**Status:** Fase 2B (PI AF Server Integration) ✅
 **Próximo:** Fase 3 (ML Integration)
