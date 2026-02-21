@@ -55,8 +55,16 @@ class SensorManager:
                 logger.warning(f"Sensor {internal_name} já existe")
                 # Extract sensor ID before closing session
                 sensor_id = existing.sensor_id
-                # Merge to detached session for continued use
-                return session.merge(existing)
+                
+                # Cria wrapper para evitar session binding issues
+                class SensorResult:
+                    def __init__(self, sensor_id, internal_name, display_name, sensor_type):
+                        self.sensor_id = sensor_id
+                        self.internal_name = internal_name
+                        self.display_name = display_name
+                        self.sensor_type = sensor_type
+                
+                return SensorResult(sensor_id, existing.internal_name, existing.display_name, existing.sensor_type)
 
             # Create new sensor
             sensor = sensor_repo.create(
@@ -78,7 +86,17 @@ class SensorManager:
 
             session.commit()
             logger.info(f"✓ Sensor criado: {internal_name}")
-            return sensor
+            
+            # Retorna objeto com sensor_id preservado (mesmo após session.close())
+            # Criamos um wrapper simples para evitar session binding issues
+            class SensorResult:
+                def __init__(self, obj):
+                    self.sensor_id = obj.sensor_id
+                    self.internal_name = obj.internal_name
+                    self.display_name = obj.display_name
+                    self.sensor_type = obj.sensor_type
+            
+            return SensorResult(sensor)
 
         except Exception as e:
             logger.error(f"Erro ao criar sensor: {e}")

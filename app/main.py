@@ -18,6 +18,7 @@ from src.data.database import init_database
 from src.alerting.alert_engine import create_alert_engine
 from src.sensors.sensor_manager import create_sensor_manager
 from app.pages.predictions_page import render_predictions_page
+from app.pages.monitoring_page import main as render_monitoring_page
 
 # Configure page
 st.set_page_config(
@@ -81,7 +82,7 @@ def render_sidebar():
         app_state = {
             'page': st.radio(
                 "Select Page",
-                ["Dashboard", "Alerts", "Predictions", "Configuration", "Reports", "DevTools"],
+                ["Dashboard", "Monitoramento", "Alerts", "Predictions", "Configuration", "Reports", "DevTools"],
                 index=0
             )
         }
@@ -148,6 +149,10 @@ def main():
         if page == "Dashboard":
             st.markdown("---")
             render_dashboard_page(app)
+
+        elif page == "Monitoramento":
+            st.markdown("---")
+            render_monitoring_page()
 
         elif page == "Alerts":
             st.markdown("---")

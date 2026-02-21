@@ -145,22 +145,30 @@ else:
         def explore(self, db):
             """Inicia exploração a partir de Buzios"""
             try:
-                # Navega até Buzios
-                root = db.RootElement
+                # Navega até Buzios - tenta acessar via Elements
+                root_elements = db.Elements
+                
+                logger.info(f"Exploração iniciada. Elementos encontrados: {root_elements.Count}")
+                
                 buzios = None
                 
-                if hasattr(root, 'Elements'):
-                    for i in range(root.Elements.Count):
-                        elem = root.Elements.Item[i]
-                        if elem.Name.upper() == 'BUZIOS':
-                            buzios = elem
-                            break
+                # Procura pelo elemento Buzios
+                for elem in root_elements:
+                    if elem.Name.upper() == 'BUZIOS':
+                        buzios = elem
+                        logger.info("Elemento 'Buzios' encontrado")
+                        break
                 
                 if not buzios:
-                    logger.error("Elemento 'Buzios' não encontrado na raiz")
-                    raise Exception("Estrutura do AF não corresponde ao esperado")
+                    logger.warning("Elemento 'Buzios' não encontrado na raiz. Tentando explorar primeiro elemento...")
+                    # Se não encontrar Buzios, tenta o primeiro elemento
+                    if root_elements.Count > 0:
+                        buzios = list(root_elements)[0]
+                        logger.info(f"Usando primeiro elemento: {buzios.Name}")
+                    else:
+                        raise Exception("Nenhum elemento encontrado na raiz da database")
                 
-                logger.info("Iniciando exploração a partir de Buzios")
+                logger.info(f"Iniciando exploração a partir de: {buzios.Name}")
                 # Explora plataformas (UEP)
                 self._explore_platforms(buzios)
                 
@@ -173,12 +181,17 @@ else:
             if not hasattr(buzios_element, 'Elements'):
                 return
 
-            for i in range(buzios_element.Elements.Count):
+            try:
+                uep_elements = list(buzios_element.Elements)
+            except Exception as e:
+                logger.error(f"Erro ao iterar elementos de plataformas: {e}")
+                return
+
+            for uep_element in uep_elements:
                 if self.max_results and self.explored_count >= self.max_results:
                     break
 
                 try:
-                    uep_element = buzios_element.Elements.Item[i]
                     uep_name = uep_element.Name.upper()
                     
                     # Verifica se é uma plataforma válida
@@ -195,12 +208,17 @@ else:
             if not hasattr(uep_element, 'Elements'):
                 return
 
-            for i in range(uep_element.Elements.Count):
+            try:
+                sensores_elements = list(uep_element.Elements)
+            except Exception as e:
+                logger.debug(f"Erro ao iterar elementos de UEP {uep_name}: {e}")
+                return
+
+            for elem in sensores_elements:
                 if self.max_results and self.explored_count >= self.max_results:
                     break
 
                 try:
-                    elem = uep_element.Elements.Item[i]
                     if elem.Name.upper() == 'SENSORES':
                         logger.debug(f"Encontrado diretório Sensores em {uep_name}")
                         self._explore_modulos(elem, uep_name)
@@ -214,12 +232,17 @@ else:
             if not hasattr(sensores_element, 'Elements'):
                 return
 
-            for i in range(sensores_element.Elements.Count):
+            try:
+                modulo_elements = list(sensores_element.Elements)
+            except Exception as e:
+                logger.debug(f"Erro ao iterar módulos de {uep_name}: {e}")
+                return
+
+            for modulo_element in modulo_elements:
                 if self.max_results and self.explored_count >= self.max_results:
                     break
 
                 try:
-                    modulo_element = sensores_element.Elements.Item[i]
                     modulo_name = modulo_element.Name.upper()
                     logger.debug(f"Explorando módulo: {modulo_name}")
                     self._explore_modulo_zonas(modulo_element, uep_name, modulo_name)
@@ -232,12 +255,17 @@ else:
             if not hasattr(modulo_element, 'Elements'):
                 return
 
-            for i in range(modulo_element.Elements.Count):
+            try:
+                zona_elements = list(modulo_element.Elements)
+            except Exception as e:
+                logger.debug(f"Erro ao iterar zonas de {modulo_name}: {e}")
+                return
+
+            for zona_element in zona_elements:
                 if self.max_results and self.explored_count >= self.max_results:
                     break
 
                 try:
-                    zona_element = modulo_element.Elements.Item[i]
                     zona_name = zona_element.Name.upper()
                     logger.debug(f"Explorando zona: {zona_name}")
                     self._explore_gas_types(zona_element, uep_name, modulo_name, zona_name)
@@ -250,12 +278,17 @@ else:
             if not hasattr(zona_element, 'Elements'):
                 return
 
-            for i in range(zona_element.Elements.Count):
+            try:
+                gas_elements = list(zona_element.Elements)
+            except Exception as e:
+                logger.debug(f"Erro ao iterar tipos de gás de {zona_name}: {e}")
+                return
+
+            for gas_element in gas_elements:
                 if self.max_results and self.explored_count >= self.max_results:
                     break
 
                 try:
-                    gas_element = zona_element.Elements.Item[i]
                     gas_name = gas_element.Name.upper()
                     
                     # Identifica tipo de sensor pelo nome do elemento
@@ -278,12 +311,17 @@ else:
             try:
                 # Primeiro tenta extrair elementos filhos (tags do sensor como subelementos)
                 if hasattr(gas_element, 'Elements') and gas_element.Elements.Count > 0:
-                    for i in range(gas_element.Elements.Count):
+                    try:
+                        sensor_tag_elements = list(gas_element.Elements)
+                    except Exception as e:
+                        logger.debug(f"Erro ao iterar tags de sensor: {e}")
+                        sensor_tag_elements = []
+                    
+                    for sensor_tag_element in sensor_tag_elements:
                         if self.max_results and self.explored_count >= self.max_results:
                             break
 
                         try:
-                            sensor_tag_element = gas_element.Elements.Item[i]
                             sensor_tag_name = sensor_tag_element.Name
                             
                             # Construir path completo
@@ -316,12 +354,17 @@ else:
 
                 # Se não há elementos, tenta extrair atributos diretos
                 elif hasattr(gas_element, 'Attributes') and gas_element.Attributes.Count > 0:
-                    for i in range(gas_element.Attributes.Count):
+                    try:
+                        attr_list = list(gas_element.Attributes)
+                    except Exception as e:
+                        logger.debug(f"Erro ao iterar atributos: {e}")
+                        attr_list = []
+                    
+                    for attr in attr_list:
                         if self.max_results and self.explored_count >= self.max_results:
                             break
 
                         try:
-                            attr = gas_element.Attributes.Item[i]
                             attr_name = attr.Name
                             
                             # Construir path completo
