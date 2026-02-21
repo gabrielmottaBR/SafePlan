@@ -1,0 +1,308 @@
+"""
+SafePlan Phase 3 - Quick Start Guide
+Guia rápido para começar a usar ML features
+"""
+
+# ============================================================================
+# QUICK START: PHASE 3 ML INTEGRATION
+# ============================================================================
+
+# 1. INICIAR DASHBOARD
+# ============================================================================
+print("1️⃣ Para iniciar o dashboard:")
+print("   streamlit run app/main.py")
+print("   → Navegue para aba 'Predictions'")
+print()
+
+# 2. USAR ML ENGINE PROGRAMATICAMENTE
+# ============================================================================
+print("2️⃣ Usar ML Engine no código:")
+print()
+
+# Exemplo 1: Detectar anomalias
+example_1 = """
+from src.ml.ml_engine import create_ml_engine
+
+engine = create_ml_engine()
+
+# Detectar anomalia em sensor 1
+result = engine.detect_anomalies(sensor_id=1)
+
+print(f"Status: {'🚨 ANOMALIA' if result['is_anomaly'] else '✓ NORMAL'}")
+print(f"Score: {result['anomaly_score']:.4f}")
+print(f"Valor: {result['value']:.2f}")
+"""
+print("Exemplo 1 - Detectar Anomalias:")
+print(example_1)
+print()
+
+# Exemplo 2: Fazer forecast
+example_2 = """
+from src.ml.ml_engine import create_ml_engine
+
+engine = create_ml_engine()
+
+# Forecast para próximas 24 horas
+result = engine.forecast_sensor(sensor_id=1, periods=24)
+
+forecast = result['forecast']
+metrics = result['metrics']
+
+print(f"Próximo valor: {forecast['forecasted_values'][0]:.2f}")
+print(f"Intervalo: [{forecast['lower_bound'][0]:.2f}, {forecast['upper_bound'][0]:.2f}]")
+print(f"MAPE: {metrics['mape']:.2f}%")
+"""
+print("Exemplo 2 - Fazer Forecast:")
+print(example_2)
+print()
+
+# Exemplo 3: Treinar modelos
+example_3 = """
+from src.ml.ml_engine import create_ml_engine
+
+engine = create_ml_engine()
+
+# Treinar para um sensor
+print("Treinando Anomaly Detector...")
+success = engine.train_anomaly_detector(sensor_id=1)
+
+print("Treinando Forecaster...")
+success = engine.train_forecaster(sensor_id=1)
+
+# Retreinar todos os modelos
+print("Retraining todos os modelos...")
+status = engine.retrain_all_models()
+print(f"Resultado: {status}")
+"""
+print("Exemplo 3 - Treinar Modelos:")
+print(example_3)
+print()
+
+# 3. TESTAR IMPLEMENTAÇÃO
+# ============================================================================
+print("3️⃣ Para testar a implementação:")
+print("   pytest tests/unit/test_ml.py -v")
+print()
+
+# 4. WORKFLOWS RECOMENDADOS
+# ============================================================================
+print("4️⃣ Workflows Recomendados:")
+print()
+
+workflow_1 = """
+Workflow A - Monitor Anomalias
+├─ Abrir Dashboard → Predictions → Anomaly Detection
+├─ Selecionar sensor via dropdown
+├─ Ver status atual (Normal/Anomalia)
+├─ Ver score (0-1 range)
+├─ Ver gráfico com histórico
+└─ Investigar qualquer anomalia detectada
+"""
+print(workflow_1)
+
+workflow_2 = """
+Workflow B - Fazer Forecast
+├─ Abrir Dashboard → Predictions → Forecasting
+├─ Selecionar sensor
+├─ Ajustar horizonte (6-168 horas)
+├─ Ver forecast chart com intervalo de confiança (95%)
+├─ Verificar métricas (MAPE, RMSE, MAE)
+└─ Monitorar que valores preditos não ultrapassem threshold
+"""
+print(workflow_2)
+
+workflow_3 = """
+Workflow C - Treinar Modelos
+├─ Abrir Dashboard → Predictions → Training
+├─ Selecionar sensores para treino
+├─ Clicar "Treinar Modelos"
+├─ Aguardar progresso
+├─ Ver quantos foram treinados com sucesso
+└─ Verificar Model Status para cobertura
+"""
+print(workflow_3)
+
+workflow_4 = """
+Workflow D - Integração com Alerts
+├─ Usar detect_anomalies() em alerting pipeline
+├─ Se score > 0.8, criar alert de severidade 3 (Danger)
+├─ Integrar forecast com alert proativo
+├─ Se forecast > upper_critical_limit, alerta critical
+└─ Notificar Teams com anomalias/forecasts
+"""
+print(workflow_4)
+
+# 5. REQUISITOS DE DADOS
+# ============================================================================
+print("5️⃣ Requisitos de Dados:")
+print()
+requirements = """
+Anomaly Detection:
+├─ Mínimo: 30 amostras
+├─ Ideal: 168+ amostras (7 dias)
+└─ Qualidade: data_quality == 0
+
+Time Series Forecasting:
+├─ Mínimo: 50 amostras
+├─ Ideal: 500+ amostras
+└─ Qualidade: data_quality == 0
+"""
+print(requirements)
+
+# 6. PRINCIPAIS CLASSES E FUNÇÕES
+# ============================================================================
+print("6️⃣ Main Classes & Functions:")
+print()
+api = """
+MLEngine
+├─ create_ml_engine()
+├─ detect_anomalies(sensor_id)
+├─ forecast_sensor(sensor_id, periods)
+├─ train_anomaly_detector(sensor_id, hours, contamination)
+├─ train_forecaster(sensor_id, hours)
+├─ retrain_all_models()
+├─ save_prediction(...)
+├─ get_predictions(sensor_id, model_type)
+└─ get_ml_status()
+
+AnomalyDetector
+├─ fit(data)
+├─ detect_isolation_forest(data)
+├─ detect_lof(data)
+├─ detect_ensemble(data, threshold)
+├─ calculate_anomaly_threshold(data, percentile)
+└─ get_anomaly_summary(data)
+
+TimeSeriesForecaster
+├─ fit(timestamps, values)
+├─ forecast(periods)
+├─ forecast_with_history(periods)
+├─ calculate_metrics()
+├─ forecast_summary(periods)
+└─ get_components()
+
+PredictionRepository
+├─ create(sensor_id, model_type, ...)
+├─ find_by_sensor(sensor_id, model_type)
+├─ find_recent(sensor_id, model_type, hours)
+├─ find_anomalies(sensor_id)
+├─ get_latest(sensor_id, model_type)
+├─ get_statistics(sensor_id)
+└─ delete_old(days)
+"""
+print(api)
+
+# 7. PRÓXIMOS PASSOS
+# ============================================================================
+print("7️⃣ Próximos Passos:")
+print()
+next_steps = """
+□ Testar Dashboard (abrir app e navegar para Predictions)
+□ Treinar modelos em alguns sensores
+□ Verificar Model Status para cobertura
+□ Executar testes unitários
+□ Ler documentação completa (docs/PHASE3_ML_GUIDE.md)
+□ Integrar com alert engine
+□ Agendar retrein automático (Phase 5)
+□ Preparar para Phase 4 (Advanced UI & Reporting)
+"""
+print(next_steps)
+
+# 8. DOCUMENTAÇÃO
+# ============================================================================
+print("8️⃣ Documentação:")
+print()
+docs = """
+├─ docs/PHASE3_ML_GUIDE.md (30+ seções)
+│  ├─ Anomaly Detection guide
+│  ├─ Time Series Forecasting guide
+│  ├─ ML Engine usage
+│  ├─ Streamlit interface
+│  └─ Troubleshooting
+├─ docs/PHASE3_IMPLEMENTATION_SUMMARY.md
+│  ├─ Componentes criados
+│  ├─ File statistics
+│  ├─ How to use
+│  └─ Integration points
+└─ tests/unit/test_ml.py
+   ├─ 19+ test cases
+   ├─ AnomalyDetector tests
+   ├─ TimeSeriesForecaster tests
+   └─ Edge case tests
+"""
+print(docs)
+
+# 9. TROUBLESHOOTING RÁPIDO
+# ============================================================================
+print("9️⃣ Troubleshooting Rápido:")
+print()
+troubleshoot = """
+❌ "Dados insuficientes"
+   → Sensor precisa 30+ leituras para anomaly, 50+ para forecast
+   → Aguardar mais dados serem coletados
+
+❌ MAPE/RMSE muito alto
+   → Coletar mais dados históricos
+   → Verificar qualidade dos dados
+   → Retreinar modelo
+
+❌ Muitos falsos-positivos em anomalias
+   → Reduzir contamination (0.05 em vez de 0.1)
+   → Aumentar threshold (0.7 em vez de 0.5)
+
+❌ Models não persistem após restart
+   → Modelos ficam em memória
+   → Treinar novamente após restart
+   → Agendar retrein diário (Phase 5)
+
+❌ Memory leak com muitos sensores
+   → Limitar número de sensores
+   → Fazer cleanup periodicamente
+   → Usar gc.collect()
+"""
+print(troubleshoot)
+
+# 10. ARQUITETURA SIMPLIFICADA
+# ============================================================================
+print("🔟 Arquitetura Simplificada:")
+print()
+arch = """
+┌─────────────────────────────────────────────────────────────┐
+│                    Django Streamlit App                     │
+│  (app/main.py com import de app/pages/predictions_page.py)  │
+└────────────┬────────────────────────────────────────────────┘
+             │
+        ┌────┴─────────────┐
+        │                 │
+        ▼                 ▼
+   ┌─────────────┐  ┌──────────────┐
+   │  ML Engine  │  │ Sensor Mgr   │
+   │ (ml_engine) │  │  (alert eng) │
+   └────┬────────┘  └──────────────┘
+        │
+   ┌────┴──────────────────┐
+   │                       │
+   ▼                       ▼
+┌──────────────┐  ┌───────────────┐
+│  Anomaly     │  │  Forecaster   │
+│  Detector    │  │  (Prophet)    │
+│ (ISO Forest) │  │               │
+└──────────────┘  └───────────────┘
+   │                       │
+   └───────────┬───────────┘
+               │
+               ▼
+        ┌─────────────┐
+        │  Database   │
+        │ (SQLite)    │
+        │  - Readings │
+        │  - Predict. │
+        │  - Alerts   │
+        └─────────────┘
+"""
+print(arch)
+
+print("\n" + "="*70)
+print("✅ Implementação Phase 3 Completa!")
+print("📖 Leia docs/PHASE3_ML_GUIDE.md para documentação completa")
+print("="*70)

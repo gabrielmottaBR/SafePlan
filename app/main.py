@@ -2,6 +2,13 @@
 SafePlan - Main Streamlit Application
 Aplicação principal que configura páginas e layout do dashboard.
 """
+import sys
+import os
+
+# Add project root to Python path
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
+
 import streamlit as st
 import logging
 from datetime import datetime
@@ -10,6 +17,7 @@ from config.settings import Config
 from src.data.database import init_database
 from src.alerting.alert_engine import create_alert_engine
 from src.sensors.sensor_manager import create_sensor_manager
+from app.pages.predictions_page import render_predictions_page
 
 # Configure page
 st.set_page_config(
@@ -147,7 +155,7 @@ def main():
 
         elif page == "Predictions":
             st.markdown("---")
-            st.info("🚧 Predictions page coming in Phase 3 (ML Integration)")
+            render_predictions_page()
 
         elif page == "Configuration":
             st.markdown("---")
