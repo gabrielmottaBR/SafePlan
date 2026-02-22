@@ -22,6 +22,18 @@ class SensorConfig(Base):
     pi_server_tag = Column(String(200), nullable=True)
     unit = Column(String(20), nullable=False)
 
+    # Novos campos do PI AF
+    id_af = Column(String(100), nullable=True)         # ID único no PI AF Server
+    descricao = Column(String(255), nullable=True)     # Descrição/PI Data Archive TAG
+    fabricante = Column(String(100), nullable=True)    # Fabricante do sensor
+    tipo_gas = Column(String(50), nullable=True)       # ch4, o2, h2s, co2, etc.
+    tipo_leitura = Column(String(50), nullable=True)   # PCT, ppm, %, unidade de medida
+    grupo = Column(String(100), nullable=True)         # Grupo de agrupamento
+    uep = Column(String(50), nullable=True)            # Unidade/Plataforma (pode ser diferente de platform)
+    valor_ma = Column(Float, nullable=True)            # Leitura em miliamper
+    valor_pct = Column(Float, nullable=True)           # Leitura em percentual
+    path_af = Column(String(500), nullable=True)       # Caminho completo no PI AF
+
     # Thresholds (configuráveis por sensor)
     lower_ok_limit = Column(Float, nullable=True)
     lower_warning_limit = Column(Float, nullable=True)
@@ -39,7 +51,7 @@ class SensorConfig(Base):
     predictions = relationship('MLPrediction', back_populates='sensor')
 
     def __repr__(self):
-        return f"<SensorConfig {self.internal_name} ({self.platform})>"
+        return f"<SensorConfig {self.internal_name} ({self.platform}) - {self.tipo_gas}>"
 
 
 class SensorReading(Base):

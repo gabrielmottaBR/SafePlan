@@ -123,7 +123,7 @@ def get_sensibilizacao_value(sensor_reading_value, warning_limit, critical_limit
         return f"<span>{sensor_reading_value:.2f}</span>"
 
 def load_sensors_data():
-    """Carrega dados de sensores com leituras mais recentes"""
+    """Carrega dados de sensores com leituras mais recentes e informações do PI AF"""
     try:
         db_manager = DatabaseManager(Config.DATABASE_URL)
         session = db_manager.get_session()
@@ -143,13 +143,23 @@ def load_sensors_data():
             sensor_info = {
                 'sensor_id': sensor.sensor_id,
                 'uep': sensor.platform,
-                'tag_detector': sensor.pi_server_tag if sensor.pi_server_tag else sensor.internal_name,
+                'tag_detector': sensor.id_af if sensor.id_af else sensor.internal_name,
                 'tipo': sensor.sensor_type,
+                # Novos campos do PI AF
+                'id_af': sensor.id_af,
+                'descricao': sensor.descricao,
+                'fabricante': sensor.fabricante,
+                'tipo_gas': sensor.tipo_gas,
+                'tipo_leitura': sensor.tipo_leitura,
+                'grupo': sensor.grupo,
+                'valor_ma': sensor.valor_ma,
+                'valor_pct': sensor.valor_pct,
+                # Status e leitura
                 'estado': 'Operacional',  # Padrão: pode ser atualizado baseado em alert_history
                 'trat': '✓',  # Tratamento ativo
-                'grupos_votacao': f"{sensor.platform}_{sensor.sensor_type}(1/{sensor.sensor_id % 6 + 1})",
-                'corrente': f"{4.5 + (sensor.sensor_id % 10) * 0.1:.2f}",  # Simulado
-                'sensibilizacao': f"{latest_reading.value:.2f}" if latest_reading else "N/A",
+                'grupos_votacao': sensor.grupo if sensor.grupo else 'N/A',
+                'corrente': f"{sensor.valor_ma:.2f}" if sensor.valor_ma else f"{4.5 + (sensor.sensor_id % 10) * 0.1:.2f}",  
+                'sensibilizacao': f"{latest_reading.value:.2f}" if latest_reading else f"{sensor.valor_pct:.2f}" if sensor.valor_pct else "N/A",
                 'reading_value': latest_reading.value if latest_reading else None,
                 'unit': sensor.unit,
                 'lower_ok': sensor.lower_ok_limit,
@@ -189,15 +199,15 @@ def main():
     selected_ueps = st.sidebar.multiselect(
         "Selecione UEPs:",
         options=ueps,
-        default=ueps[:5]  # Mostra primeiros 5 por padrão
+        default=ueps  # Mostra TODOS por padrão
     )
     
-    # Filtro por tipo de sensor
-    tipos = sorted(df['tipo'].unique().tolist())
-    selected_tipos = st.sidebar.multiselect(
-        "Filtro por Tipo:",
-        options=tipos,
-        default=tipos
+    # Filtro por tipo de gas (usando TIPO_GAS para classificacao)
+    tipo_gas_values = sorted([x for x in df['tipo_gas'].unique().tolist() if x and x != 'N/A'])
+    selected_tipo_gas = st.sidebar.multiselect(
+        "Filtro por Tipo de Gas (TIPO_GAS):",
+        options=tipo_gas_values,
+        default=tipo_gas_values  # Mostra todos por padrão
     )
     
     # Filtro por estado
@@ -208,10 +218,10 @@ def main():
         default=["Operacional", "Falha", "Override"]
     )
     
-    # Aplicar filtros
+    # Aplicar filtros (incluindo TIPO_GAS)
     filtered_df = df[
         (df['uep'].isin(selected_ueps)) &
-        (df['tipo'].isin(selected_tipos)) &
+        (df['tipo_gas'].isin(selected_tipo_gas) | (df['tipo_gas'] == 'N/A')) &
         (df['estado'].isin(selected_estados))
     ].copy()
     
@@ -234,7 +244,7 @@ def main():
     # Opções de visualização
     view_option = st.radio(
         "Formato de Visualização:",
-        options=["Tabela Detalhada", "Tabela Compacta", "Cards"],
+        options=["Tabela Detalhada", "Tabela Compacta", "Detalhes PI AF", "Cards"],
         horizontal=True
     )
     
@@ -248,7 +258,7 @@ def main():
         ]].copy()
         
         display_df.columns = [
-            '🏢 UEP', '🏷️ TAG Detector', '📊 Tipo', '⚡ Estado',
+            '🏢 UEP', '🏷️ TAG', '📊 Tipo', '⚡ Estado',
             'Trat.', '🔗 Grupos de Votação', '⚡ Corrente', '📈 Sensibilização', '📐 Unidade'
         ]
         
@@ -267,17 +277,91 @@ def main():
         for uep in selected_ueps:
             uep_df = filtered_df[filtered_df['uep'] == uep]
             if not uep_df.empty:
-                with st.expander(f"**{uep}** ({len(uep_df)} sensores)", expanded=False):
-                    compact_df = uep_df[[
-                        'tag_detector', 'tipo', 'estado', 'sensibilizacao', 'unit'
+                with st.expander(f"🏢 **{uep}** ({len(uep_df)} sensores)", expanded=False):
+                    # Agrupar por GRUPO dentro de cada UEP
+                    grupos = sorted(uep_df['grupos_votacao'].unique().tolist())
+                    for grupo in grupos:
+                        grupo_data = uep_df[uep_df['grupos_votacao'] == grupo]
+                        st.markdown(f"🔗 **Grupo: {grupo}** ({len(grupo_data)} sensores)")
+                        
+                        compact_df = grupo_data[[
+                            'tag_detector', 'tipo', 'estado', 'sensibilizacao', 'unit'
+                        ]].copy()
+                        compact_df.columns = ['TAG', 'Tipo', 'Estado', 'Valor', 'Unidade']
+                        
+                        st.dataframe(
+                            compact_df,
+                            use_container_width=True,
+                            hide_index=True,
+                            height=180
+                        )
+    
+    elif view_option == "Detalhes PI AF":
+        st.subheader("Informações Detalhadas do PI AF Server - Agrupado por Grupo de Votação")
+        
+        # Agrupar por GRUPO (grupo de votação)
+        grupo_list = sorted(filtered_df['grupo'].unique().tolist())
+        
+        for grupo in grupo_list:
+            grupo_df = filtered_df[filtered_df['grupo'] == grupo]
+            if not grupo_df.empty:
+                # Contar sensores por tipo de gas dentro do grupo
+                tipos_gas = grupo_df['tipo_gas'].value_counts().to_dict()
+                gas_str = ", ".join([f"{t}({count})" for t, count in tipos_gas.items()])
+                
+                with st.expander(f"🔗 **{grupo}** ({len(grupo_df)} sensores) - Gases: {gas_str}", expanded=True):
+                    # Tabela com todos os campos
+                    display_grupo = grupo_df[[
+                        'id_af', 'tag_detector', 'tipo_gas', 'tipo_leitura', 
+                        'fabricante', 'valor_ma', 'valor_pct', 'sensibilizacao'
                     ]].copy()
-                    compact_df.columns = ['TAG', 'Tipo', 'Estado', 'Valor', 'Unidade']
+                    
+                    display_grupo.columns = [
+                        'ID Sensor', 'TAG PI', 'Tipo Gas', 'Unidade (TIPO_LEITURA)',
+                        'Fabricante', 'Valor (mA)', 'Valor (%)', 'Valor Atual'
+                    ]
                     
                     st.dataframe(
-                        compact_df,
+                        display_grupo,
                         use_container_width=True,
                         hide_index=True
                     )
+                    
+                    # Detalhes individuais
+                    st.caption("Detalhes por Sensor")
+                    
+                    for idx, (_, row) in enumerate(grupo_df.iterrows()):
+                        with st.expander(f"🔍 {row['id_af']} - {row['descricao']}", expanded=False):
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                st.markdown("**Informações Básicas**")
+                                st.write(f"**ID AF:** {row['id_af']}")
+                                st.write(f"**TAG PI:** {row['tag_detector']}")
+                                st.write(f"**Descrição:** {row['descricao']}")
+                                st.write(f"**Fabricante:** {row['fabricante']}")
+                                st.write(f"**Tipo Sensor:** {row['tipo']}")
+                                
+                            with col2:
+                                st.markdown("**Classificação e Medição**")
+                                st.write(f"**Tipo de Gas (TIPO_GAS):** {row['tipo_gas']}")
+                                st.write(f"**Unidade (TIPO_LEITURA):** {row['tipo_leitura']}")
+                                st.write(f"**Unidade do Sistema:** {row['unit']}")
+                                st.write(f"**Grupo de Votação:** {row['grupo']}")
+                                st.write(f"**Plataforma (UEP):** {row['uep']}")
+                            
+                            st.markdown("**Valores Registrados no PI AF**")
+                            col1, col2, col3, col4 = st.columns(4)
+                            
+                            with col1:
+                                st.metric("Valor (mA)", f"{row['valor_ma']:.2f}" if row['valor_ma'] else "N/A")
+                            with col2:
+                                st.metric("Valor (%)", f"{row['valor_pct']:.2f}" if row['valor_pct'] else "N/A")
+                            with col3:
+                                st.metric("Valor Atual", f"{row['sensibilizacao']}", row['unit'])
+                            with col4:
+                                st.write(f"**Unidade:**")
+                                st.warning(f"{row['tipo_leitura'] if row['tipo_leitura'] != 'N/A' else row['unit']}")
     
     else:  # Cards view
         st.subheader("Sensores - Visualização em Cards")

@@ -24,9 +24,13 @@ class SensorManager:
     def create_sensor(self, internal_name: str, display_name: str, sensor_type: str,
                      platform: str, unit: str, pi_server_tag: str = None,
                      lower_ok_limit: float = None, lower_warning_limit: float = None,
-                     upper_warning_limit: float = None, upper_critical_limit: float = None) -> Optional[SensorConfig]:
+                     upper_warning_limit: float = None, upper_critical_limit: float = None,
+                     id_af: str = None, descricao: str = None, fabricante: str = None,
+                     tipo_gas: str = None, tipo_leitura: str = None, grupo: str = None,
+                     uep: str = None, valor_ma: float = None, valor_pct: float = None,
+                     path_af: str = None) -> Optional[SensorConfig]:
         """
-        Cria novo sensor.
+        Cria novo sensor com dados do PI AF Server.
 
         Args:
             internal_name: Nome interno único
@@ -39,6 +43,16 @@ class SensorManager:
             lower_warning_limit: Limite inferior Warning
             upper_warning_limit: Limite superior Warning
             upper_critical_limit: Limite superior Critical
+            id_af: ID único no PI AF (será usado como TAG)
+            descricao: Descrição do sensor
+            fabricante: Fabricante
+            tipo_gas: Tipo de gás (ch4, o2, h2s, etc)
+            tipo_leitura: Tipo de leitura (PCT, ppm, etc)
+            grupo: Grupo de agrupamento
+            uep: Unidade/Plataforma adicional
+            valor_ma: Leitura em miliamper
+            valor_pct: Leitura em percentual
+            path_af: Caminho completo no PI AF
 
         Returns:
             SensorConfig criado ou None se erro
@@ -77,7 +91,17 @@ class SensorManager:
                 lower_ok_limit=lower_ok_limit,
                 lower_warning_limit=lower_warning_limit,
                 upper_warning_limit=upper_warning_limit,
-                upper_critical_limit=upper_critical_limit
+                upper_critical_limit=upper_critical_limit,
+                id_af=id_af,
+                descricao=descricao,
+                fabricante=fabricante,
+                tipo_gas=tipo_gas,
+                tipo_leitura=tipo_leitura,
+                grupo=grupo,
+                uep=uep,
+                valor_ma=valor_ma,
+                valor_pct=valor_pct,
+                path_af=path_af
             )
 
             # Flush to get sensor_id generated

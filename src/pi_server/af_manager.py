@@ -4,8 +4,19 @@ Permite descobrir e mapear sensores de fogo/gás no DB_BUZIOS_SENSORES
 """
 import logging
 from typing import List, Dict, Optional
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# Try to import AF SDK
+try:
+    import clr
+    clr.AddReference("OSIsoft.AFSDK")
+    from OSIsoft import AF
+    AF_AVAILABLE = True
+except Exception as e:
+    AF_AVAILABLE = False
+    logger.warning(f"AF SDK not available: {e}")
 
 
 class AFDatabaseManager:
@@ -251,7 +262,7 @@ class AFDatabaseManager:
 
 def discover_af_database():
     """
-    Script para descobrir estrutura do SAURIOPIAF02\DB_BUZIOS_SENSORES
+    Script para descobrir estrutura do SAURIOPIAF02\\DB_BUZIOS_SENSORES
     """
     try:
         from src.pi_server import gideaoPI
@@ -284,12 +295,151 @@ def discover_af_database():
             print(f"  {i+1}. {sensor_path}")
 
         return True
-
+    
     except Exception as e:
-        logger.error(f"Erro em discover_af_database: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error discovering AF database: {e}")
         return False
+
+
+class AFManager:
+    """
+    High-level AF Server connection manager.
+    
+    Provides connection to PI AF Server and methods to retrieve sensor data.
+    """
+    
+    DEFAULT_AF_SERVER = "SAURIOPIAF02"
+    DEFAULT_AF_DATABASE = "DB_BUZIOS_SENSORES"
+    
+    def __init__(self, af_server: str = None, af_database: str = None):
+        """
+        Initialize AF Server connection.
+        
+        Args:
+            af_server: AF Server name (default: SAURIOPIAF02)
+            af_database: AF Database name (default: DB_BUZIOS_SENSORES)
+        """
+        self.af_server_name = af_server or self.DEFAULT_AF_SERVER
+        self.af_database_name = af_database or self.DEFAULT_AF_DATABASE
+        self.af_system = None
+        self.af_database = None
+        self.manager = None
+        
+        if not AF_AVAILABLE:
+            raise RuntimeError("AF SDK not available. Install pythonnet and AF SDK.")
+        
+        self._connect()
+    
+    def _connect(self):
+        """Connect to AF Server and get database reference."""
+        try:
+            logger.info(f"Connecting to AF Server: {self.af_server_name}...")
+            self.af_system = AF.PISystems()[self.af_server_name]
+            
+            logger.info(f"Connected. Getting database: {self.af_database_name}...")
+            self.af_database = self.af_system.Databases[self.af_database_name]
+            
+            self.manager = AFDatabaseManager(self.af_database)
+            logger.info(f"✓ AF Database connected successfully")
+        
+        except Exception as e:
+            logger.error(f"Error connecting to AF Server: {e}")
+            raise
+    
+    def get_element_by_path(self, path: str) -> Optional[object]:
+        """
+        Get AF element by its path string.
+        
+        Args:
+            path: Full path string (e.g., "Buzios\\P74\\...")
+            
+        Returns:
+            AF Element object or None if not found
+        """
+        if not self.af_database:
+            return None
+        
+        try:
+            # Replace forward slashes with backslashes
+            path = path.replace("/", "\\")
+            
+            # Split path and navigate
+            parts = path.split("\\")
+            current_element = None
+            
+            for part in parts:
+                if not part:
+                    continue
+                
+                if current_element is None:
+                    # Root level
+                    if part in [elem.Name for elem in self.af_database.Elements]:
+                        current_element = self.af_database.Elements[part]
+                    else:
+                        return None
+                else:
+                    # Navigate deeper
+                    if part in [elem.Name for elem in current_element.Elements]:
+                        current_element = current_element.Elements[part]
+                    else:
+                        return None
+            
+            return current_element
+        
+        except Exception as e:
+            logger.debug(f"Error navigating path {path}: {e}")
+            return None
+    
+    def get_element_attributes(self, element: object) -> Dict[str, object]:
+        """
+        Get attributes from AF element.
+        
+        Args:
+            element: AF Element object
+            
+        Returns:
+            Dict mapping attribute names to values
+        """
+        if not element:
+            return {}
+        
+        attributes = {}
+        try:
+            if hasattr(element, 'Attributes'):
+                for attr in element.Attributes:
+                    try:
+                        value = attr.GetValue() if hasattr(attr, 'GetValue') else attr.Value
+                        attributes[attr.Name] = value
+                    except Exception as e:
+                        logger.debug(f"Error getting attribute {attr.Name}: {e}")
+        
+        except Exception as e:
+            logger.debug(f"Error getting attributes: {e}")
+        
+        return attributes
+    
+    def discover_sensors_by_path(self, paths: List[str]) -> List[Dict[str, object]]:
+        """
+        Discover sensors given a list of paths.
+        
+        Args:
+            paths: List of AF element paths
+            
+        Returns:
+            List of sensor dicts with extracted attributes
+        """
+        sensors = []
+        for path in paths:
+            try:
+                element = self.get_element_by_path(path)
+                if element:
+                    attributes = self.get_element_attributes(element)
+                    attributes['path_af'] = path
+                    sensors.append(attributes)
+            except Exception as e:
+                logger.debug(f"Error discovering sensor at {path}: {e}")
+        
+        return sensors
 
 
 if __name__ == '__main__':

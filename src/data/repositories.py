@@ -75,8 +75,11 @@ class SensorConfigRepository:
                platform: str, unit: str, pi_server_tag: str = None,
                lower_ok_limit: float = None, lower_warning_limit: float = None,
                upper_warning_limit: float = None, upper_critical_limit: float = None,
-               enabled: bool = True) -> SensorConfig:
-        """Cria novo sensor"""
+               id_af: str = None, descricao: str = None, fabricante: str = None,
+               tipo_gas: str = None, tipo_leitura: str = None, grupo: str = None,
+               uep: str = None, valor_ma: float = None, valor_pct: float = None,
+               path_af: str = None, enabled: bool = True) -> SensorConfig:
+        """Cria novo sensor com todos os campos incluindo dados do PI AF"""
         sensor = SensorConfig(
             internal_name=internal_name,
             display_name=display_name,
@@ -88,6 +91,16 @@ class SensorConfigRepository:
             lower_warning_limit=lower_warning_limit,
             upper_warning_limit=upper_warning_limit,
             upper_critical_limit=upper_critical_limit,
+            id_af=id_af,
+            descricao=descricao,
+            fabricante=fabricante,
+            tipo_gas=tipo_gas,
+            tipo_leitura=tipo_leitura,
+            grupo=grupo,
+            uep=uep,
+            valor_ma=valor_ma,
+            valor_pct=valor_pct,
+            path_af=path_af,
             enabled=enabled
         )
         self.session.add(sensor)
