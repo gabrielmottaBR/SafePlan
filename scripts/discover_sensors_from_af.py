@@ -157,12 +157,12 @@ class SensorDiscoveryFromAF:
                 logger.warning(f"Could not connect to PI AF Server: {e}")
                 logger.info("Falling back to path-based discovery (attributes may be limited)")
     
-    def read_excel_paths(self) -> List[str]:
+    def read_excel_paths(self) -> List[Dict[str, str]]:
         """
-        Read sensor paths from Excel file.
+        Read sensor paths and metadata from Excel file.
         
         Returns:
-            List of AF element paths (relative, without SAURIOPIAF02 prefix)
+            List of dicts with 'path', 'grupo', and 'modulo' keys
         """
         if not self.excel_file.exists():
             logger.error(f"Excel file not found: {self.excel_file}")
@@ -176,24 +176,47 @@ class SensorDiscoveryFromAF:
                 return []
             
             df = pd.read_excel(self.excel_file, sheet_name='SENSORES')
-            paths = df['PATH'].tolist()
             
-            logger.info(f"✓ Read {len(paths)} sensor paths from Excel")
+            # Expected columns: 'Path | ID', 'Path | Grupo', 'Grupo', 'Módulo'
+            # Column A (0): Path | ID - the full path
+            # Column B (1): Path | Grupo - the path prefix for group (usually duplicates of A)
+            # Column C (2): Grupo - the group abbreviation (ex: 10S_FD)
+            # Column D (3): Módulo - the module (ex: 10S)
+            
+            logger.info(f"  Columns found: {df.columns.tolist()}")
+            
+            paths_data = []
+            for idx, row in df.iterrows():
+                # Get path from first column (usually 'Path | ID')
+                path = row.iloc[0] if len(row) > 0 else None
+                grupo = row.iloc[2] if len(row) > 2 else None  # Column C
+                modulo = row.iloc[3] if len(row) > 3 else None  # Column D
+                
+                if path:
+                    paths_data.append({
+                        'path': str(path),
+                        'grupo': str(grupo) if grupo and pd.notna(grupo) else None,
+                        'modulo': str(modulo) if modulo and pd.notna(modulo) else None,
+                    })
+            
+            logger.info(f"✓ Read {len(paths_data)} sensor paths from Excel")
             
             # Limit if specified
             if self.max_results:
-                paths = paths[:self.max_results]
-                logger.info(f"  Limited to {len(paths)} sensors (--max-results={self.max_results})")
+                paths_data = paths_data[:self.max_results]
+                logger.info(f"  Limited to {len(paths_data)} sensors (--max-results={self.max_results})")
             
             # Demo mode: use sample
             if self.demo_mode:
-                paths = paths[:self.DEMO_SENSORS_COUNT]
-                logger.info(f"  Demo mode: using first {len(paths)} sensors")
+                paths_data = paths_data[:self.DEMO_SENSORS_COUNT]
+                logger.info(f"  Demo mode: using first {len(paths_data)} sensors")
             
-            return paths
+            return paths_data
             
         except Exception as e:
             logger.error(f"Error reading Excel: {e}")
+            import traceback
+            traceback.print_exc()
             return []
     
     def build_complete_path(self, relative_path: str) -> str:
@@ -419,18 +442,19 @@ class SensorDiscoveryFromAF:
             logger.info(f"Limit: {self.max_results} sensors")
         logger.info("="*80)
         
-        # Read paths from Excel
-        paths = self.read_excel_paths()
-        if not paths:
+        # Read paths and metadata from Excel
+        paths_data = self.read_excel_paths()
+        if not paths_data:
             logger.error("No paths read from Excel")
             return []
         
-        logger.info(f"\nProcessing {len(paths)} sensor paths...")
+        logger.info(f"\nProcessing {len(paths_data)} sensor paths...")
         logger.info("="*80 + "\n")
         
         sensors = []
-        for idx, relative_path in enumerate(paths, 1):
+        for idx, path_info in enumerate(paths_data, 1):
             try:
+                relative_path = path_info['path']
                 # Build complete AF path
                 complete_path = self.build_complete_path(relative_path)
                 
@@ -449,6 +473,12 @@ class SensorDiscoveryFromAF:
                     # Fallback: extract from path structure
                     attributes = self.extract_attributes_from_path(complete_path)
                 
+                # Add Excel metadata (grupo and modulo from columns C and D)
+                if path_info.get('grupo'):
+                    attributes['grupo'] = path_info['grupo']
+                if path_info.get('modulo'):
+                    attributes['modulo'] = path_info['modulo']
+                
                 # Debug: log first 3 path_af values
                 if idx <= 3:
                     logger.info(f"DEBUG [{idx}] saved path_af: {attributes.get('path_af', 'NONE')[:80]}...")
@@ -459,12 +489,13 @@ class SensorDiscoveryFromAF:
                     self.sensors_found += 1
                     
                     # Log progress
-                    if idx % max(1, len(paths) // 20) == 0 or self.demo_mode or idx <= 5:
+                    if idx % max(1, len(paths_data) // 20) == 0 or self.demo_mode or idx <= 5:
                         id_af = attributes.get('id_af', 'UNKNOWN')
                         tipo_gas = attributes.get('tipo_gas', 'N/A')
                         uep = attributes.get('uep', 'UNKNOWN')
-                        logger.info(f"  [{idx:5}/{len(paths):5}] {id_af:20} | "
-                                  f"{str(tipo_gas):10} | {uep}")
+                        grupo = attributes.get('grupo', 'N/A')
+                        logger.info(f"  [{idx:5}/{len(paths_data):5}] {id_af:20} | "
+                                  f"{str(tipo_gas):10} | {uep:6} | {grupo}")
                 else:
                     self.sensors_skipped += 1
                 

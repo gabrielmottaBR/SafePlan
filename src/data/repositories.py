@@ -77,7 +77,7 @@ class SensorConfigRepository:
                upper_warning_limit: float = None, upper_critical_limit: float = None,
                id_af: str = None, descricao: str = None, fabricante: str = None,
                tipo_gas: str = None, tipo_leitura: str = None, grupo: str = None,
-               uep: str = None, valor_ma: float = None, valor_pct: float = None,
+               modulo: str = None, uep: str = None, valor_ma: float = None, valor_pct: float = None,
                path_af: str = None, enabled: bool = True) -> SensorConfig:
         """Cria novo sensor com todos os campos incluindo dados do PI AF"""
         sensor = SensorConfig(
@@ -97,6 +97,7 @@ class SensorConfigRepository:
             tipo_gas=tipo_gas,
             tipo_leitura=tipo_leitura,
             grupo=grupo,
+            modulo=modulo,
             uep=uep,
             valor_ma=valor_ma,
             valor_pct=valor_pct,
@@ -124,6 +125,19 @@ class SensorConfigRepository:
         """Busca todos os sensores de uma plataforma"""
         return self.session.query(SensorConfig).filter(
             SensorConfig.platform == platform,
+            SensorConfig.enabled == True
+        ).all()
+
+    def get_by_id_af(self, id_af: str) -> Optional[SensorConfig]:
+        """Busca sensor pelo ID do PI AF Server"""
+        return self.session.query(SensorConfig).filter(
+            SensorConfig.id_af == id_af
+        ).first()
+
+    def get_by_grupo(self, grupo: str) -> List[SensorConfig]:
+        """Busca todos os sensores de um grupo de votação"""
+        return self.session.query(SensorConfig).filter(
+            SensorConfig.grupo == grupo,
             SensorConfig.enabled == True
         ).all()
 
@@ -196,6 +210,11 @@ class SensorReadingRepository:
                 SensorReading.timestamp <= end
             )
         ).order_by(SensorReading.timestamp.asc()).all()
+
+    def get_readings_for_sensor(self, sensor_id: int, start: datetime,
+                                 end: datetime) -> List[SensorReading]:
+        """Alias para get_by_time_range para compatibilidade"""
+        return self.get_by_time_range(sensor_id, start, end)
 
     def get_recent(self, sensor_id: int, limit: int = 100) -> List[SensorReading]:
         """Retorna últimas N leituras de um sensor"""
@@ -437,3 +456,25 @@ class RepositoryFactory:
 
     def notification_log(self) -> NotificationLogRepository:
         return NotificationLogRepository(self.session)
+
+    @staticmethod
+    def create_repository(repo_type: str, db):
+        """Factory static method para criar repositórios diretamente"""
+        session = db.get_session()
+        factory = RepositoryFactory(session)
+        
+        if repo_type == 'sensor':
+            return factory.sensor_config()
+        elif repo_type == 'reading':
+            return factory.sensor_reading()
+        elif repo_type == 'alert_definition':
+            return factory.alert_definition()
+        elif repo_type == 'alert_history':
+            return factory.alert_history()
+        elif repo_type == 'prediction':
+            return factory.ml_prediction()
+        elif repo_type == 'notification':
+            return factory.notification_log()
+        else:
+            raise ValueError(f"Tipo de repositório desconhecido: {repo_type}")
+

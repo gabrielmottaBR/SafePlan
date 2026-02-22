@@ -28,7 +28,8 @@ class SensorConfig(Base):
     fabricante = Column(String(100), nullable=True)    # Fabricante do sensor
     tipo_gas = Column(String(50), nullable=True)       # ch4, o2, h2s, co2, etc.
     tipo_leitura = Column(String(50), nullable=True)   # PCT, ppm, %, unidade de medida
-    grupo = Column(String(100), nullable=True)         # Grupo de agrupamento
+    grupo = Column(String(100), nullable=True)         # Grupo de agrupamento (ex: 10S_FD)
+    modulo = Column(String(50), nullable=True)         # Módulo (ex: 10S)
     uep = Column(String(50), nullable=True)            # Unidade/Plataforma (pode ser diferente de platform)
     valor_ma = Column(Float, nullable=True)            # Leitura em miliamper
     valor_pct = Column(Float, nullable=True)           # Leitura em percentual

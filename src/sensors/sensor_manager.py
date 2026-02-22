@@ -27,7 +27,7 @@ class SensorManager:
                      upper_warning_limit: float = None, upper_critical_limit: float = None,
                      id_af: str = None, descricao: str = None, fabricante: str = None,
                      tipo_gas: str = None, tipo_leitura: str = None, grupo: str = None,
-                     uep: str = None, valor_ma: float = None, valor_pct: float = None,
+                     modulo: str = None, uep: str = None, valor_ma: float = None, valor_pct: float = None,
                      path_af: str = None) -> Optional[SensorConfig]:
         """
         Cria novo sensor com dados do PI AF Server.
@@ -49,6 +49,7 @@ class SensorManager:
             tipo_gas: Tipo de gás (ch4, o2, h2s, etc)
             tipo_leitura: Tipo de leitura (PCT, ppm, etc)
             grupo: Grupo de agrupamento
+            modulo: Módulo ao qual o sensor pertence
             uep: Unidade/Plataforma adicional
             valor_ma: Leitura em miliamper
             valor_pct: Leitura em percentual
@@ -98,6 +99,7 @@ class SensorManager:
                 tipo_gas=tipo_gas,
                 tipo_leitura=tipo_leitura,
                 grupo=grupo,
+                modulo=modulo,
                 uep=uep,
                 valor_ma=valor_ma,
                 valor_pct=valor_pct,

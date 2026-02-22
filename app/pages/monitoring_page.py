@@ -152,6 +152,7 @@ def load_sensors_data():
                 'tipo_gas': sensor.tipo_gas,
                 'tipo_leitura': sensor.tipo_leitura,
                 'grupo': sensor.grupo,
+                'modulo': sensor.modulo,  # Novo: módulo da planilha
                 'valor_ma': sensor.valor_ma,
                 'valor_pct': sensor.valor_pct,
                 # Status e leitura
@@ -251,24 +252,38 @@ def main():
     if view_option == "Tabela Detalhada":
         st.subheader("Sensores Monitorados")
         
-        # Preparar dados para exibição
-        display_df = filtered_df[[
-            'uep', 'tag_detector', 'tipo', 'estado', 'trat',
-            'grupos_votacao', 'corrente', 'sensibilizacao', 'unit'
-        ]].copy()
+        # Mostrar tabela com botões interativos para navegação
+        cols_header = st.columns([1, 2, 2, 1, 1, 2.5, 1, 1.5, 1])
+        col_names = ['UEP', '🏷️ TAG', '📊 Tipo', 'Estado', 'Trat.', '🔗 Grupo Votação', 'Corrente', 'Sensibilização', 'Unidade']
         
-        display_df.columns = [
-            '🏢 UEP', '🏷️ TAG', '📊 Tipo', '⚡ Estado',
-            'Trat.', '🔗 Grupos de Votação', '⚡ Corrente', '📈 Sensibilização', '📐 Unidade'
-        ]
+        for col, name in zip(cols_header, col_names):
+            col.markdown(f"**{name}**")
         
-        # Mostrar tabela
-        st.dataframe(
-            display_df,
-            use_container_width=True,
-            height=600,
-            hide_index=True
-        )
+        st.markdown("---")
+        
+        # Exibir linhas com botões
+        for _, row in filtered_df.iterrows():
+            cols = st.columns([1, 2, 2, 1, 1, 2.5, 1, 1.5, 1])
+            
+            cols[0].text(row['uep'])
+            
+            # Botão para TAG
+            if cols[1].button(f"📍 {row['tag_detector']}", key=f"tag_{row['sensor_id']}"):
+                st.session_state.selected_sensor_id = row['tag_detector']
+                st.switch_page("pages/sensor_detail_page.py")
+            
+            cols[2].text(row['tipo'])
+            cols[3].text(row['estado'])
+            cols[4].text(row['trat'])
+            
+            # Botão para Grupo
+            if cols[5].button(f"🔗 {row['grupos_votacao']}", key=f"grupo_{row['sensor_id']}"):
+                st.session_state.selected_voting_group = row['grupos_votacao']
+                st.switch_page("pages/voting_group_detail_page.py")
+            
+            cols[6].text(row['corrente'])
+            cols[7].text(row['sensibilizacao'])
+            cols[8].text(row['unit'])
         
     elif view_option == "Tabela Compacta":
         st.subheader("Sensores - Visualização Compacta")
@@ -282,19 +297,32 @@ def main():
                     grupos = sorted(uep_df['grupos_votacao'].unique().tolist())
                     for grupo in grupos:
                         grupo_data = uep_df[uep_df['grupos_votacao'] == grupo]
-                        st.markdown(f"🔗 **Grupo: {grupo}** ({len(grupo_data)} sensores)")
                         
-                        compact_df = grupo_data[[
-                            'tag_detector', 'tipo', 'estado', 'sensibilizacao', 'unit'
-                        ]].copy()
-                        compact_df.columns = ['TAG', 'Tipo', 'Estado', 'Valor', 'Unidade']
+                        # Botão para o grupo de votação
+                        col1, col2 = st.columns([0.8, 9.2])
+                        if col1.button(f"🔗 Grupo", key=f"grupo_compacta_{grupo}"):
+                            st.session_state.selected_voting_group = grupo
+                            st.switch_page("pages/voting_group_detail_page.py")
+                        col2.markdown(f"**{grupo}** ({len(grupo_data)} sensores)")
                         
-                        st.dataframe(
-                            compact_df,
-                            use_container_width=True,
-                            hide_index=True,
-                            height=180
-                        )
+                        # Exibir sensores do grupo em tabela
+                        st.markdown("---")
+                        cols = st.columns(5)
+                        for col, name in zip(cols, ['TAG', 'Tipo', 'Estado', 'Valor', 'Unidade']):
+                            col.markdown(f"**{name}**")
+                        
+                        for _, row in grupo_data.iterrows():
+                            cols = st.columns(5)
+                            
+                            # Botão para TAG
+                            if cols[0].button(f"📍 {row['tag_detector']}", key=f"tag_compacta_{row['sensor_id']}"):
+                                st.session_state.selected_sensor_id = row['tag_detector']
+                                st.switch_page("pages/sensor_detail_page.py")
+                            
+                            cols[1].text(row['tipo'])
+                            cols[2].text(row['estado'])
+                            cols[3].text(row['sensibilizacao'])
+                            cols[4].text(row['unit'])
     
     elif view_option == "Detalhes PI AF":
         st.subheader("Informações Detalhadas do PI AF Server - Agrupado por Grupo de Votação")
@@ -309,59 +337,33 @@ def main():
                 tipos_gas = grupo_df['tipo_gas'].value_counts().to_dict()
                 gas_str = ", ".join([f"{t}({count})" for t, count in tipos_gas.items()])
                 
-                with st.expander(f"🔗 **{grupo}** ({len(grupo_df)} sensores) - Gases: {gas_str}", expanded=True):
+                # Botão para o grupo de votação
+                col1, col2 = st.columns([0.5, 9.5])
+                grupo_clicked = col1.button(f"🔗", key=f"pi_grupo_{grupo}", help="Detalhes do Grupo")
+                if grupo_clicked:
+                    st.session_state.selected_voting_group = grupo
+                    st.switch_page("pages/voting_group_detail_page.py")
+                col2.markdown(f"**{grupo}** ({len(grupo_df)} sensores) - Gases: {gas_str}")
+                
+                with st.expander(f"Detalhes", expanded=False):
                     # Tabela com todos os campos
-                    display_grupo = grupo_df[[
-                        'id_af', 'tag_detector', 'tipo_gas', 'tipo_leitura', 
-                        'fabricante', 'valor_ma', 'valor_pct', 'sensibilizacao'
-                    ]].copy()
-                    
-                    display_grupo.columns = [
-                        'ID Sensor', 'TAG PI', 'Tipo Gas', 'Unidade (TIPO_LEITURA)',
-                        'Fabricante', 'Valor (mA)', 'Valor (%)', 'Valor Atual'
-                    ]
-                    
-                    st.dataframe(
-                        display_grupo,
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                    
-                    # Detalhes individuais
-                    st.caption("Detalhes por Sensor")
-                    
-                    for idx, (_, row) in enumerate(grupo_df.iterrows()):
-                        with st.expander(f"🔍 {row['id_af']} - {row['descricao']}", expanded=False):
-                            col1, col2 = st.columns(2)
-                            
-                            with col1:
-                                st.markdown("**Informações Básicas**")
-                                st.write(f"**ID AF:** {row['id_af']}")
-                                st.write(f"**TAG PI:** {row['tag_detector']}")
-                                st.write(f"**Descrição:** {row['descricao']}")
-                                st.write(f"**Fabricante:** {row['fabricante']}")
-                                st.write(f"**Tipo Sensor:** {row['tipo']}")
-                                
-                            with col2:
-                                st.markdown("**Classificação e Medição**")
-                                st.write(f"**Tipo de Gas (TIPO_GAS):** {row['tipo_gas']}")
-                                st.write(f"**Unidade (TIPO_LEITURA):** {row['tipo_leitura']}")
-                                st.write(f"**Unidade do Sistema:** {row['unit']}")
-                                st.write(f"**Grupo de Votação:** {row['grupo']}")
-                                st.write(f"**Plataforma (UEP):** {row['uep']}")
-                            
-                            st.markdown("**Valores Registrados no PI AF**")
-                            col1, col2, col3, col4 = st.columns(4)
-                            
-                            with col1:
-                                st.metric("Valor (mA)", f"{row['valor_ma']:.2f}" if row['valor_ma'] else "N/A")
-                            with col2:
-                                st.metric("Valor (%)", f"{row['valor_pct']:.2f}" if row['valor_pct'] else "N/A")
-                            with col3:
-                                st.metric("Valor Atual", f"{row['sensibilizacao']}", row['unit'])
-                            with col4:
-                                st.write(f"**Unidade:**")
-                                st.warning(f"{row['tipo_leitura'] if row['tipo_leitura'] != 'N/A' else row['unit']}")
+                    for _, row in grupo_df.iterrows():
+                        col1, col2, col3 = st.columns([2, 2, 2])
+                        
+                        # Botão para o sensor
+                        with col1:
+                            if col1.button(f"📍 {row['id_af']}", key=f"pi_sensor_{row['sensor_id']}"):
+                                st.session_state.selected_sensor_id = row['id_af']
+                                st.switch_page("pages/sensor_detail_page.py")
+                            st.caption(row['tag_detector'] or 'N/A')
+                        with col2:
+                            st.write(f"**Tipo:** {row['tipo_gas']}")
+                            st.write(f"**Fabricante:** {row['fabricante'] or 'N/A'}")
+                        with col3:
+                            st.write(f"**Leitura:** {row['tipo_leitura'] or 'N/A'}")
+                            st.write(f"**Valor Atual:** {row['sensibilizacao']} {row['unit'] or 'N/A'}")
+                        
+                        st.divider()
     
     else:  # Cards view
         st.subheader("Sensores - Visualização em Cards")
@@ -379,8 +381,11 @@ def main():
                 
                 with st.container(border=True):
                     st.markdown(f"**{estado_emoji} {row['uep']}**")
-                    st.markdown(f"<div class='tag-info'>{row['tag_detector']}</div>", 
-                               unsafe_allow_html=True)
+                    
+                    # Botão para detalhes do sensor
+                    if st.button(f"📍 {row['tag_detector']}", key=f"card_sensor_{row['sensor_id']}"):
+                        st.session_state.selected_sensor_id = row['tag_detector']
+                        st.switch_page("pages/sensor_detail_page.py")
                     
                     col1, col2 = st.columns(2)
                     with col1:
@@ -393,8 +398,10 @@ def main():
                     st.caption("Sensibilização / Corrente")
                     st.write(f"**{row['sensibilizacao']} {row['unit']}** | {row['corrente']} mA")
                     
-                    st.caption("Grupo de Votação")
-                    st.write(f"`{row['grupos_votacao']}`")
+                    # Botão para detalhes do grupo
+                    if st.button(f"🔗 {row['grupos_votacao']}", key=f"card_grupo_{row['sensor_id']}"):
+                        st.session_state.selected_voting_group = row['grupos_votacao']
+                        st.switch_page("pages/voting_group_detail_page.py")
     
     st.markdown("---")
     
