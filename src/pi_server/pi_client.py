@@ -39,13 +39,13 @@ class PIServerClient:
 
     def connect(self) -> bool:
         """
-        Conecta ao PI Server usando gideaoPI.
+        Conecta ao PI Server usando gideao_pi.
 
         Returns:
             True se conexão bem-sucedida, False caso contrário
         """
         try:
-            import gideaoPI as gp
+            import gideao_pi as gp
 
             logger.info(f"Conectando ao PI Server: {self.host}")
             self.servidor = gp.getServidor(self.host, self.archive)
@@ -60,7 +60,7 @@ class PIServerClient:
             return True
 
         except ImportError:
-            logger.error("gideaoPI não instalado. Instale com: pip install gideaoPI")
+            logger.error("gideao_pi não instalado. Instale com: pip install gideao_pi")
             return False
         except Exception as e:
             logger.error(f"Erro ao conectar ao PI Server: {e}")

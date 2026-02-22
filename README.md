@@ -9,7 +9,7 @@ SafePlan é um dashboard interativo profissional para monitoramento em tempo qua
 **Tecnologia:**
 - **Frontend/Backend:** Streamlit
 - **Database:** SQLite (protótipo, escalável para PostgreSQL/SQL Server)
-- **Data Source:** PI Server via gideaoPI
+- **Data Source:** PI Server via gideao_pi
 - **ML:** scikit-learn (Anomaly Detection) + Prophet (Forecasting)
 - **Scheduler:** APScheduler
 - **Reporting:** PDF, Excel
@@ -27,7 +27,7 @@ SafePlan é um dashboard interativo profissional para monitoramento em tempo qua
    - `config/settings.py`: Configuration via environment variables
 
 3. **PI Server Integration**
-   - `src/pi_server/pi_client.py`: Wrapper around gideaoPI
+   - `src/pi_server/pi_client.py`: Wrapper around gideao_pi
    - `src/pi_server/data_fetcher.py`: Ingestão de dados
 
 4. **Database Initialization**
@@ -131,8 +131,8 @@ Integração completa com PI AF Server (SAURIOPIAF02) para leitura automatizada 
 1. **Configuração AF Server**
    - `config/config_gideaopi.json`: Configuração para SAURIOPIAF02 e DB_BUZIOS_SENSORES
 
-2. **Biblioteca gideaoPI Adaptada**
-   - `src/pi_server/gideaoPI.py`: Adaptação da biblioteca Petrobras com logging e integração ConfiguraçãoI
+2. **Biblioteca gideao_pi Adaptada**
+   - `src/pi_server/gideao_pi.py`: Adaptação da biblioteca Petrobras com logging e integração ConfiguraçãoI
 
 3. **AF Database Manager**
    - `src/pi_server/af_manager.py`: Exploração e descoberta automatizada de sensores na hierarquia AF

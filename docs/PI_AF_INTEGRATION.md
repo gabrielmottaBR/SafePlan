@@ -139,7 +139,7 @@ SafePlan/
 │   └── sensor_paths_buzios.json       # Mapeamento gerado (após descoberta)
 │
 ├── src/pi_server/
-│   ├── gideaoPI.py                   # Biblioteca adaptada do Petrobras
+│   ├── gideao_pi.py                  # Biblioteca adaptada do Petrobras
 │   ├── af_manager.py                 # Gerenciador de AF Database
 │   ├── pi_client.py                  # Wrapper atualizado
 │   └── data_fetcher.py               # Fetcher para AF & PI
@@ -236,12 +236,12 @@ Se quiser explorar a database AF manualmente:
 
 ```python
 import sys
-from src.pi_server import gideaoPI
+from src.pi_server import gideao_pi
 from src.pi_server.af_manager import AFDatabaseManager
 
 # Conecta
-af_server = gideaoPI.getServidor('SAURIOPIAF02', 'AF')
-db = gideaoPI.getAFDataBase('DB_BUZIOS_SENSORES', af_server)
+af_server = gideao_pi.getServidor('SAURIOPIAF02', 'AF')
+db = gideao_pi.getAFDataBase('DB_BUZIOS_SENSORES', af_server)
 
 # Explora
 manager = AFDatabaseManager(db)
@@ -314,9 +314,9 @@ As seguintes features estão planejadas:
 ## 📚 Referências
 
 - **Arquivo de configuração:** `config/config_gideaopi.json`
-- **Biblioteca wrapper:** `src/pi_server/gideaoPI.py`
+- **Biblioteca wrapper:** `src/pi_server/gideao_pi.py`
 - **AF Database manager:** `src/pi_server/af_manager.py`
-- **Documento original (referência):** `/Python/pyee-master/01_python_basico_PI/gideaoPI.py`
+- **Documento original (referência):** `/Python/pyee-master/01_python_basico_PI/gideao_pi.py`
 
 ---
 
