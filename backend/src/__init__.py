@@ -1,0 +1,3 @@
+"""
+SafePlan Backend - Core modules
+"""

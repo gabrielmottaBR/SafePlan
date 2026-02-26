@@ -1,0 +1,3 @@
+"""
+FastAPI API routes package
+"""

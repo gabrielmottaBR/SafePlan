@@ -50,6 +50,8 @@ A documentação deve ser centralizada e evita redundância:
 - ❌ **Nunca** crie `.md` para cada funcionalidade pequena
 - ❌ **Nunca** deixe documentação fora da pasta `docs/`
 - ❌ **Nunca** crie múltiplos arquivos `README.md` em diferentes pastas
+- ❌ **Nunca** crie `.md` sem a solicitação do usário
+
 
 **Estrutura recomendada:**
 ```

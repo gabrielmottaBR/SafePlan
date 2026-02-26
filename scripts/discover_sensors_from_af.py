@@ -6,7 +6,7 @@ This script reads sensor paths from Excel and builds complete AF paths with
 server and database information. It then extracts 10 required attributes.
 
 Example complete path:
-    \\SAURIOPIAF02\DB_BUZIOS_SENSORES\Buzios\P74\Sensores\HULL\...\SENSOR_ID|VALOR_PCT
+    \\SAURIOPIAF02\DB_BUZIOS_SENSORES\Buzios\P74\Sensores\HULL\...\SENSOR_ID|Valor Atual
 
 This script:
 1. Reads sensor paths from Excel file exported from PI Builder
@@ -22,7 +22,7 @@ This script:
    - Grupo: Voting group (for bypass/override degradation detection)
    - UEP: Platform/Unit (P74-P80, FPAB, FPAT, etc)
    - VALOR_mA: Current mA reading
-   - VALOR_PCT: Percentage conversion of mA
+   - Valor Atual: Current sensor reading (valor_pct)
 
 Usage:
     # Real mode (connects to PI AF Server)
@@ -94,7 +94,7 @@ class SensorDiscoveryFromAF:
     - grupo: Voting group (for bypass/override degradation detection)
     - uep: Platform/Unit where sensor installed (P74-P80, FPAB, FPAT, etc)
     - valor_ma: Current reading in milliamps
-    - valor_pct: Reading converted to percentage
+    - valor_pct: Current sensor reading (from 'Valor Atual' attribute)
     """
     
     # PI AF Server connection details
@@ -105,7 +105,7 @@ class SensorDiscoveryFromAF:
     # Attributes to extract from AF elements
     REQUIRED_ATTRIBUTES = [
         'ID', 'Descricao', 'FABRICANTE', 'Tipo', 'TIPO_GAS',
-        'TIPO_LEITURA', 'Grupo', 'UEP', 'VALOR_mA', 'VALOR_PCT'
+        'TIPO_LEITURA', 'Grupo', 'UEP', 'VALOR_mA', 'Valor Atual'
     ]
     
     # Map AF attribute names to our field names
@@ -119,7 +119,7 @@ class SensorDiscoveryFromAF:
         'Grupo': 'grupo',
         'UEP': 'uep',
         'VALOR_mA': 'valor_ma',
-        'VALOR_PCT': 'valor_pct',
+        'Valor Atual': 'valor_pct',
     }
     
     DEMO_SENSORS_COUNT = 20  # Demo mode: sample 20 sensors
